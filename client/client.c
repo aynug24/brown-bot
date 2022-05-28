@@ -14,12 +14,15 @@
 #include <sys/un.h>
 #include <ctype.h>
 #include <limits.h>
+#include <time.h>
 
 const int CLIENT_PATH_MAXLEN = 1024; // todo разнести константы туда где должны быть (или избавиться)
 const int CLIENT_WAIT_TIME_MAXLEN = 10;
 const int DEFAULT_WAIT_TIME_MS = 10;
 
-bool try_get_wait_arg(int argc, char* argv[], char* dest) {
+const int MAX_BATCH_SIZE = 255;
+
+bool _try_get_wait_arg(int argc, char* argv[], char** dest) {
     opterr = 0;
     int argname;
     while ((argname = getopt(argc, argv, "w:")) != -1) {
@@ -41,7 +44,7 @@ bool try_get_wait_arg(int argc, char* argv[], char* dest) {
         }
     }
 
-    dest = NULL;
+    *dest = NULL;
     return true;
 }
 
@@ -51,39 +54,110 @@ long get_wait_time(int argc, char* argv[]) {
         perror("Couldn't allocate memory for wait time");
     }
 
-    if (!try_get_wait_arg(argc, argv, wait_time_str)) {
+    char* old_wait_time = wait_time_str;
+    if (!_try_get_wait_arg(argc, argv, &wait_time_str)) {
         fprintf(stderr, "Error while parsing arguments\n");
     }
     if (wait_time_str == NULL) {
+        free(old_wait_time);
         return DEFAULT_WAIT_TIME_MS;
     }
 
-    char** arg_end = &wait_time_str;
-    const long wait_time = strtol(wait_time_str, arg_end, 10);
-    if (*wait_time_str == '\0' || **arg_end != '\0') {
+    bool ok = true;
+    char* arg_end = NULL;
+    const long wait_time = strtol(wait_time_str, &arg_end, 10);
+    if (*wait_time_str == '\0' || *arg_end != '\0') {
         fprintf(stderr, "Invalid wait time argument format: \"%s\"\n", wait_time_str);
-        return -1;
-    }
-    if (wait_time < 0) {
+        ok = false;
+    } else if (wait_time < 0) {
         fprintf(stderr, "Argument value error: negative wait time %ld", wait_time);
-        return -1;
+        ok = false;
     }
-    if (wait_time > INT_MAX) {
-        fprintf(stderr, "Argument value too big for int: %lds", wait_time);
+
+    free(wait_time_str);
+    return ok ? wait_time : -1;
+}
+
+int rand_range(int min, int max) { // not really uniform buuut
+    int r = rand();
+    return min + (r % (max - min + 1));
+}
+
+int msleep(long ms)
+{
+    struct timespec ts;
+    int res;
+
+    ts.tv_sec = ms / 1000;
+    ts.tv_nsec = (ms % 1000) * 1000000;
+
+    do {
+        res = nanosleep(&ts, &ts);
+    } while (res && errno == EINTR);
+
+    if (res < 0 && errno != EINTR) {
+        perror("Error sleeping");
+    }
+    return res;
+}
+
+int send_stdin(long wait_ms, int client_fd) {
+    bool ok = true;
+    srand(time(NULL));
+
+    char* buf = malloc(MAX_BATCH_SIZE * sizeof(*buf));
+    if (buf == NULL) {
+        perror("Couldn't allocate buf for input");
         return -1;
     }
 
-    return wait_time;
+    while (true) {
+        int bytes_to_read = rand_range(1, MAX_BATCH_SIZE);
+        ssize_t bytes_read = read(STDIN_FILENO, buf, bytes_to_read);
+        if (bytes_read == -1) {
+            perror("Error reading input");
+            ok = false;
+            break;
+        }
+        if (bytes_read == 0) { // its eof if using read
+            break;
+        }
+
+        if (send(client_fd, buf, bytes_read, 0) < 0) {
+            perror("Error sending input to server");
+            ok = false;
+            break;
+        }
+
+        if (msleep(wait_ms) < 0) {
+            fprintf(stderr, "Couldn't sleep after input");
+            ok = false;
+            break;
+        }
+    }
+
+    free(buf);
+    return ok ? 0 : -1;
 }
 
 int main(int argc, char* argv[]) {
     bool ok = true;
-    printf("I'm client!\n");
+    printf("I'm client!\n"); // todo удалить отладочные принты
 
-    const char* server_full_path = get_server_full_path();
-    if (server_full_path == NULL) {
-        fprintf(stderr, "Couldn't read server path\n");
+    const long wait_ms = get_wait_time(argc, argv);
+    if (wait_ms < 0) {
+        fprintf(stderr, "Couldn't determine wait value\n");
         ok = false;
+    }
+
+
+    const char* server_full_path = NULL;
+    if (ok) {
+        server_full_path = get_server_full_path();
+        if (server_full_path == NULL) {
+            fprintf(stderr, "Couldn't read server path\n");
+            ok = false;
+        }
     }
 
     int client_fd;
@@ -105,12 +179,10 @@ int main(int argc, char* argv[]) {
     }
 
     if (ok) {
-        char* buf = malloc(1024);
-        size_t len = 1024;
-        ssize_t r = getline(&buf, &len, stdin);
-
-        send(client_fd, buf, r, 0);
-        printf("Sent!");
+        if (send_stdin(wait_ms, client_fd) < 0) {
+            fprintf(stderr, "Couldn't send all stdin to server\n");
+            ok = false;
+        }
     }
 
     if (close_temp_socket(full_client_addr) < 0) {

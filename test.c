@@ -18,17 +18,17 @@
 
 const int CLIENT_PATH_MAXLEN = 1024; // todo разнести константы туда где должны быть (или избавиться)
 const int CLIENT_WAIT_TIME_MAXLEN = 10;
-const int DEFAULT_WAIT_TIME_MS = 10;
+const int DEFAULT_WAIT_TIME_MS = 200;
 
-const int MAX_BATCH_SIZE = 255;
+const int MAX_BATCH_SIZE = 3;
 
-bool try_get_wait_arg(int argc, char* argv[], char* dest) {
+bool try_get_wait_arg(int argc, char* argv[], char** dest) {
     opterr = 0;
     int argname;
     while ((argname = getopt(argc, argv, "w:")) != -1) {
         switch (argname) {
             case 'w':
-                strcpy(dest, optarg);
+                strcpy(*dest, optarg);
                 return true;
             case '?':
                 if (optopt == 'w')
@@ -44,7 +44,7 @@ bool try_get_wait_arg(int argc, char* argv[], char* dest) {
         }
     }
 
-    dest = NULL;
+    *dest = NULL;
     return true;
 }
 
@@ -54,17 +54,16 @@ long get_wait_time(int argc, char* argv[]) {
         perror("Couldn't allocate memory for wait time");
     }
 
-    if (!try_get_wait_arg(argc, argv, wait_time_str)) {
+    if (!try_get_wait_arg(argc, argv, &wait_time_str)) {
         fprintf(stderr, "Error while parsing arguments\n");
     }
     if (wait_time_str == NULL) {
         return DEFAULT_WAIT_TIME_MS;
     }
 
-    char* nullptr = NULL;
-    char** arg_end = &nullptr;
-    const long wait_time = strtol(wait_time_str, arg_end, 10);
-    if (*wait_time_str == '\0' || **arg_end != '\0') {
+    char* arg_end = NULL;
+    const long wait_time = strtol(wait_time_str, &arg_end, 10);
+    if (*wait_time_str == '\0' || *arg_end != '\0') {
         fprintf(stderr, "Invalid wait time argument format: \"%s\"\n", wait_time_str);
         return -1;
     }
@@ -148,6 +147,7 @@ int main(int argc, char* argv[]) {
             }
 
             print_escaped(buf, bytes_read);
+            printf("\n");
 
             if (msleep(wait) < 0) {
                 fprintf(stderr, "Couldn't sleep after input");
@@ -156,6 +156,8 @@ int main(int argc, char* argv[]) {
             }
         }
     }
+
+    printf("I ENDED");
 
     return 0;
 }
