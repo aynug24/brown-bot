@@ -12,50 +12,49 @@
 
 long sum = 0;
 
-int main() {
-    bool no_err = true;
+int main() { // todo atexit
+    bool ok = true;
     printf("I'm server!\n");
 
     const char* server_full_path = get_server_full_path();
     if (server_full_path == NULL) {
         fprintf(stderr, "Couldn't read server path\n");
-        no_err = false;
+        ok = false;
     }
 
     int server_fd;
-    if (no_err) {
+    if (ok) {
         server_fd = socket(PF_UNIX, SOCK_STREAM, 0);
         if (server_fd == -1) {
-            perror("Couldn't create server socket\n");
-            no_err = false;
+            perror("Couldn't create server socket");
+            ok = false;
         }
     }
 
     struct sockaddr_un sockaddr;
-    if (no_err) {
+    if (ok) {
         sockaddr.sun_family = AF_UNIX;
         strcpy(sockaddr.sun_path, server_full_path);
 
-        unlink(server_full_path);
-        if (bind(server_fd, (struct sockaddr *) &sockaddr, sizeof(sockaddr)) < 0) {
-            perror("Couldn't bind server socket\n");
-            no_err = false;
+        if (bind_assuring_dirs(server_fd, &sockaddr, server_full_path) < 0) {
+            fprintf(stderr, "Couldn't bind server socket");
+            ok = false;
         }
     }
 
-    if (no_err) {
+    if (ok) {
         if (listen(server_fd, SERVER_BACKLOG) < 0) {
-            perror("Couldn't make server socket listen\n");
-            no_err = false;
+            perror("Couldn't make server socket listen");
+            ok = false;
         }
     }
 
-    if (no_err) {
+    if (ok) {
         while (true) {
             const int client_fd = accept(server_fd, NULL, NULL);
             if (client_fd == -1) {
-                perror("Error accepting client socket\n");
-                no_err = false;
+                perror("Error accepting client socket");
+                ok = false;
                 break;
             }
 
@@ -68,6 +67,6 @@ int main() {
         }
     }
 
-    unlink(server_full_path);
+    unlink(server_full_path); // ?
     return 0;
 }

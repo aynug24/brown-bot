@@ -21,13 +21,13 @@ const int SERVER_BACKLOG = 10;
 char* get_param(const char* param_name) {
     FILE* config = fopen(CONFIG_NAME, "r");
     if (config == NULL) {
-        perror("Couldn't open config\n");
+        perror("Couldn't open config");
         exit(-1);
     }
 
     char* config_line = malloc(CONFIG_LINE_MAXLEN * sizeof(*config_line));
     if (config_line == NULL) {
-        perror("Couldn't create config line buffer\n");
+        perror("Couldn't create config line buffer");
         exit(-1);
     }
 
@@ -35,7 +35,7 @@ char* get_param(const char* param_name) {
         memset(config_line, 0, CONFIG_LINE_MAXLEN * sizeof(config_line[0]));
         if (fgets(config_line, CONFIG_LINE_MAXLEN, config) == NULL) {
             if (!feof(config)) {
-                perror("Error reading config\n");
+                perror("Error reading config");
                 exit(-1);
             }
             free(config_line);
@@ -63,14 +63,14 @@ char* get_param(const char* param_name) {
         }
 
         if (fclose(config) == EOF) {
-            perror("Couldn't close config\n");
+            perror("Couldn't close config");
             exit(-1);
         }
 
         const ulong param_value_len = strlen(param_value);
         char* param_value_str = malloc(param_value_len * sizeof(*param_value_str));
         if (param_value_str == NULL) {
-            perror("Couldn't allocate result memory\n");
+            perror("Couldn't allocate result memory");
             exit(-1);
         }
         strcpy(param_value_str, param_value);
@@ -93,10 +93,10 @@ char* get_server_full_path() {
     if (no_err) {
         server_path = malloc(strlen(SOCKETS_DIR) + strlen(server_path_relative) + 1);
         if (server_path == NULL) {
-            perror("Couldn't allocate server path\n");
+            perror("Couldn't allocate server path");
             no_err = false;
         } else if (sprintf(server_path, "%s%s", SOCKETS_DIR, server_path_relative) < 0) {
-            perror("Couldn't concat server path\n");
+            perror("Couldn't concat server path");
             no_err = false;
         }
     }

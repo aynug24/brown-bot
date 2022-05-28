@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "../config_read.h"
-#include "../socket_help.h"
+#include "config_read.h"
+#include "socket_help.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -13,11 +13,14 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <ctype.h>
+#include <time.h>
 #include <limits.h>
 
 const int CLIENT_PATH_MAXLEN = 1024; // todo разнести константы туда где должны быть (или избавиться)
 const int CLIENT_WAIT_TIME_MAXLEN = 10;
 const int DEFAULT_WAIT_TIME_MS = 10;
+
+const int MAX_BATCH_SIZE = 255;
 
 bool try_get_wait_arg(int argc, char* argv[], char* dest) {
     opterr = 0;
@@ -58,7 +61,8 @@ long get_wait_time(int argc, char* argv[]) {
         return DEFAULT_WAIT_TIME_MS;
     }
 
-    char** arg_end = &wait_time_str;
+    char* nullptr = NULL;
+    char** arg_end = &nullptr;
     const long wait_time = strtol(wait_time_str, arg_end, 10);
     if (*wait_time_str == '\0' || **arg_end != '\0') {
         fprintf(stderr, "Invalid wait time argument format: \"%s\"\n", wait_time_str);
@@ -68,54 +72,90 @@ long get_wait_time(int argc, char* argv[]) {
         fprintf(stderr, "Argument value error: negative wait time %ld", wait_time);
         return -1;
     }
-    if (wait_time > INT_MAX) {
-        fprintf(stderr, "Argument value too big for int: %lds", wait_time);
-        return -1;
-    }
 
     return wait_time;
 }
 
+int rand_range(int min, int max) { // not really uniform buuut
+    int r = rand();
+    return min + (r % (max - min + 1));
+}
+
+void print_escaped(const char* src, ssize_t n) {
+    for (int i = 0; i < n; ++i) {
+        char c = *(src+i);
+        switch (*(src + i)) {
+            case '\n':
+                printf("\\n");
+                break;
+            default:
+                printf("%c", *(src + i));
+                break;
+        }
+    }
+    //fflush(stdout);
+}
+
+int msleep(long ms)
+{
+    struct timespec ts;
+    int res;
+
+    ts.tv_sec = ms / 1000;
+    ts.tv_nsec = (ms % 1000) * 1000000;
+
+    do {
+        res = nanosleep(&ts, &ts);
+    } while (res && errno == EINTR);
+
+    if (res < 0 && errno != EINTR) {
+        perror("Error sleeping");
+    }
+    return res;
+}
+
 int main(int argc, char* argv[]) {
     bool ok = true;
-    printf("I'm client!\n");
-
-    const char* server_full_path = get_server_full_path();
-    if (server_full_path == NULL) {
-        fprintf(stderr, "Couldn't read server path\n");
+    long wait = get_wait_time(argc, argv);
+    if (wait < 0) {
+        fprintf(stderr, "Error getting wait time");
         ok = false;
     }
 
-    int client_fd;
-    char full_client_addr[CLIENT_PATH_MAXLEN];
+
+
+    char* buf;
     if (ok) {
-        client_fd = make_temp_socket(AF_UNIX, SOCK_STREAM, 0, full_client_addr);
-        if (client_fd == -1) {
-            fprintf(stderr, "Couldn't make client socket\n");
+        srand(time(NULL));
+        buf = malloc(MAX_BATCH_SIZE * sizeof(*buf));
+        if (buf == NULL) {
+            perror("Couldn't allocate buf for input");
             ok = false;
         }
     }
 
     if (ok) {
-        struct sockaddr_un server_addr = make_sockaddr(server_full_path);
-        if (connect(client_fd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-            perror("Couldn't connect to server");
-            ok = false;
+        while (true) {
+            int bytes_to_read = rand_range(1, MAX_BATCH_SIZE);
+            ssize_t bytes_read = read(STDIN_FILENO, buf, bytes_to_read);
+            if (bytes_read == -1) {
+                perror("Error reading input");
+                ok = false;
+                break;
+            }
+            if (bytes_read == 0) { // its eof if using read
+                break;
+            }
+
+            print_escaped(buf, bytes_read);
+
+            if (msleep(wait) < 0) {
+                fprintf(stderr, "Couldn't sleep after input");
+                ok = false;
+                break;
+            }
         }
     }
 
-    if (ok) {
-        char* buf = malloc(1024);
-        size_t len = 1024;
-        ssize_t r = getline(&buf, &len, stdin);
-
-        send(client_fd, buf, r, 0);
-        printf("Sent!");
-    }
-
-    if (close_temp_socket(full_client_addr) < 0) {
-        fprintf(stderr, "Can't close client socket\n");
-    }
-    free((char*)server_full_path);
-    return ok ? 0 : -1;
+    return 0;
 }
