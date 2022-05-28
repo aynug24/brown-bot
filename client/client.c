@@ -101,19 +101,25 @@ int msleep(long ms)
     return res;
 }
 
-int send_stdin(long wait_ms, int client_fd) {
+int send_stdin_recv_sum(long wait_ms, int client_fd) {
     bool ok = true;
     srand(time(NULL));
 
-    char* buf = malloc(MAX_BATCH_SIZE * sizeof(*buf));
-    if (buf == NULL) {
-        perror("Couldn't allocate buf for input");
+    char* read_buf = malloc(MAX_BATCH_SIZE * sizeof(*read_buf));
+    if (read_buf == NULL) {
+        perror("Couldn't allocate read_buf for input");
+        return -1;
+    }
+
+    char* recv_buf = malloc(sizeof(long long));
+    if (recv_buf == NULL) {
+        perror("Couldn't allocate recv_buf");
         return -1;
     }
 
     while (true) {
         int bytes_to_read = rand_range(1, MAX_BATCH_SIZE);
-        ssize_t bytes_read = read(STDIN_FILENO, buf, bytes_to_read);
+        ssize_t bytes_read = read(STDIN_FILENO, read_buf, bytes_to_read);
         if (bytes_read == -1) {
             perror("Error reading input");
             ok = false;
@@ -123,10 +129,26 @@ int send_stdin(long wait_ms, int client_fd) {
             break;
         }
 
-        if (send(client_fd, buf, bytes_read, 0) < 0) {
+        if (send(client_fd, read_buf, bytes_read, 0) < 0) {
             perror("Error sending input to server");
             ok = false;
             break;
+        }
+
+        int bytes_recvd;
+        while ((bytes_recvd = recv(client_fd, recv_buf, sizeof(long long), MSG_DONTWAIT)) != 0) {
+            if (bytes_recvd < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
+                perror("Error receiving server answer");
+                ok = false;
+            }
+            if (bytes_recvd == 0) {
+                continue;
+            }
+            if (bytes_recvd != sizeof(long long)) { // если надо, могу вфигачить совсем асинхронно, но ща мне это кажется перебором
+                recv(client_fd, recv_buf + bytes_recvd, sizeof(long long) - bytes_recvd, MSG_WAITALL);
+            }
+
+
         }
 
         if (msleep(wait_ms) < 0) {
@@ -136,7 +158,7 @@ int send_stdin(long wait_ms, int client_fd) {
         }
     }
 
-    free(buf);
+    free(read_buf);
     return ok ? 0 : -1;
 }
 
@@ -179,8 +201,8 @@ int main(int argc, char* argv[]) {
     }
 
     if (ok) {
-        if (send_stdin(wait_ms, client_fd) < 0) {
-            fprintf(stderr, "Couldn't send all stdin to server\n");
+        if (send_stdin_recv_sum(wait_ms, client_fd) < 0) {
+            fprintf(stderr, "Error while communicating with server\n");
             ok = false;
         }
     }

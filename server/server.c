@@ -10,6 +10,8 @@
 #include <poll.h>
 #include "../config_read.h" // its bad...
 #include "../socket_help.h"
+#include "../readnumsbuf.h"
+#include "../sendnumsbuf.h"
 
 const int MAX_CONN_COUNT = 1000;
 const int CONN_QUEUE = 100;
@@ -17,36 +19,30 @@ const int CONN_QUEUE = 100;
 const int POLL_TIMEOUT = -1;
 const int MAX_NUM_LEN = 10;
 
+const int BUFFER_LEN = 1024;
+
 long sum = 0;
 
-typedef struct ReadNumsBuf {
-    char* buf;
-    int buf_len;
-
-    int buf_pos;
-    int last_num_start;
-} ReadNumsBuf;
-
-int recv_nums(int client_fd, ReadNumsBuf buf) {
-    while (true) {
-        int recvd = recv(client_fd, buf.buf, buf.buf_len - buf.buf_pos, MSG_DONTWAIT);
-        if (recvd < 0) {
-            perror("Error recieving data from client");
-            return -1;
-        }
-        if (recvd == 0) {
-            return 0;
-        }
-
-        buf.buf_pos += recvd;
+int free_recv(ReadNumsBuf* recv_bufs, int sock_count) {
+    for (int i = 0; i < sock_count; ++i) {
+        free(recv_bufs[i].buf);
     }
 }
 
-int process_conns(int server_fd, struct pollfd poll_set[], int* sockets_count) {
+int free_send(SendNumsBuf* send_bufs, int sock_count) {
+    for (int i = 0; i < sock_count; ++i) {
+        free(send_bufs[i].buf);
+    }
+}
+
+int process_conns(
+        int server_fd, struct pollfd poll_set[], int* sockets_count,
+                ReadNumsBuf* recv_bufs, SendNumsBuf* send_bufs) {
+    bool ok = true;
     printf("Waiting for client (%d total)...\n", *sockets_count);
     poll(poll_set, *sockets_count, POLL_TIMEOUT);
 
-    for(int pollfd_idx = 0; pollfd_idx < *sockets_count; pollfd_idx++)
+    for (int pollfd_idx = 0; pollfd_idx < *sockets_count; pollfd_idx++)
     {
         if (poll_set[pollfd_idx].revents & POLLIN) {
             if (poll_set[pollfd_idx].fd == server_fd) {
@@ -57,35 +53,58 @@ int process_conns(int server_fd, struct pollfd poll_set[], int* sockets_count) {
                 struct sockaddr_un client_address;
                 int client_len = sizeof(client_address);
                 int client_fd = accept(
-                        server_fd, (struct sockaddr*)&client_address, (socklen_t *)&client_len);
+                        server_fd, (struct sockaddr*) &client_address, (socklen_t*) &client_len);
+                printf("Adding client on fd %d\n", client_fd);
                 if (client_fd < 0) {
                     perror("Error accepting connection");
-                    return -1;
+                    ok = false;
+                    break;
+                }
+
+                if (make_readbuf(BUFFER_LEN, recv_bufs + *sockets_count) < 0) {
+                    fprintf(stderr, "Error creating readbuf");
+                    ok = false;
+                    break;
+                }
+                if (make_sendbuf(BUFFER_LEN, send_bufs + *sockets_count) < 0) {
+                    fprintf(stderr, "Error creating sendbuf");
+                    ok = false;
+                    break;
                 }
 
                 poll_set[*sockets_count].fd = client_fd;
-                poll_set[*sockets_count].events = POLLIN; // POLLOUT?
+                poll_set[*sockets_count].events = POLLIN & POLLOUT & POLLHUP;
                 *sockets_count++;
-
-                printf("Adding client on fd %d\n", client_fd);
-            }
-            else {
+            } else {
                 // read
-
-                if (poll_set[*sockets_count].events & POLLHUP) {
-                    printf("Removing client on fd %d\n", poll_set[*sockets_count].fd);
-                    if (close(poll_set[*sockets_count].fd) < 0) {
-                        perror("Couldn't close socket");
-                        return -1;
-                    }
-
-                    poll_set[pollfd_idx] = poll_set[*sockets_count];
-                    sockets_count--;
-                }
             }
         }
+        if (poll_set[pollfd_idx].events & POLLOUT) {
+            if (pollfd_idx == 0) {
+                continue;
+            }
+
+            // send
+        }
+        if (poll_set[pollfd_idx].events & POLLHUP) {
+            printf("Removing client on fd %d\n", poll_set[*sockets_count].fd);
+            if (close(poll_set[pollfd_idx].fd) < 0) {
+                perror("Couldn't close socket");
+                ok = false;
+                break;
+            }
+
+            free(recv_bufs[pollfd_idx].buf);
+            recv_bufs[pollfd_idx] = recv_bufs[*sockets_count];
+            free(send_bufs[pollfd_idx].buf);
+            send_bufs[pollfd_idx] = send_bufs[*sockets_count];
+
+            poll_set[pollfd_idx] = poll_set[*sockets_count];
+            sockets_count--;
+        }
     }
-    return 0;
+
+    return ok ? 0 : -1;
 }
 
 int main() { // todo atexit
@@ -132,13 +151,20 @@ int main() { // todo atexit
         poll_set[0].events = POLLIN;
         int sockets_count = 1;
 
+        ReadNumsBuf recv_bufs[MAX_CONN_COUNT];
+        SendNumsBuf send_bufs[MAX_CONN_COUNT];
+        memset(recv_bufs, 0, sizeof(recv_bufs));
+        memset(send_bufs, 0, sizeof(send_bufs));
+
         while (true) {
-            if (process_conns(server_fd, poll_set, &sockets_count) < 0) {
+            if (process_conns(server_fd, poll_set, &sockets_count, recv_bufs, send_bufs) < 0) {
                 fprintf(stderr, "Error while processing connections");
                 ok = false;
                 break;
             }
         }
+        free_recv(recv_bufs, sockets_count);
+        free_send(send_bufs, sockets_count);
     }
 
     unlink(server_full_path); // ?
