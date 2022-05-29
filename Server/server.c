@@ -8,7 +8,7 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <poll.h>
-#include "../config_read.h" // its bad...
+#include "../config_read/config_read.h" // its bad...
 #include "../socket_help.h"
 #include "../data_structs/readnumsbuf.h"
 #include "../data_structs/sendnumsbuf.h"
@@ -192,7 +192,7 @@ int process_conns(
 }
 
 int main() {
-    atexit(clean);
+    //atexit(clean);
 
     bool ok = true;
     printf("I'm server!\n");

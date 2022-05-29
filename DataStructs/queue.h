@@ -14,7 +14,7 @@
 #include <poll.h>
 #include <fcntl.h>
 #include <assert.h>
-#include "../config_read.h" // its bad...
+#include "../config_read/config_read.h" // its bad...
 #include "../socket_help.h"
 
 #ifndef BROWN_BOT_QUEUE_H
