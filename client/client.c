@@ -37,7 +37,7 @@ int send_stdin_recv_sums(long wait_ms, int client_fd, char* recv_buf, ssize_t* t
             break;
         }
 
-        if (send(client_fd, read_buf, bytes_read, 0) < 0) {
+        if (send(client_fd, read_buf, bytes_read, MSG_NOSIGNAL) < 0) {
             perror("Error sending input to server");
             ok = false;
             break;
@@ -49,7 +49,9 @@ int send_stdin_recv_sums(long wait_ms, int client_fd, char* recv_buf, ssize_t* t
             ok = false;
             break;
         }
-        *total_recvd += recvd;
+        if (recvd >= 0) {
+            *total_recvd += recvd;
+        }
 
         if (msleep(wait_ms) < 0) {
             fprintf(stderr, "Couldn't sleep after input");
@@ -63,7 +65,6 @@ int send_stdin_recv_sums(long wait_ms, int client_fd, char* recv_buf, ssize_t* t
 }
 
 int main(int argc, char* argv[]) {
-    printf("I'm client!\n"); // todo удалить отладочные принты
     bool ok = true;
     char* full_server_path = NULL;
     char* full_client_addr = NULL;

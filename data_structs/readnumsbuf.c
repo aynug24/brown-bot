@@ -51,7 +51,7 @@ int parse_buf_num(ReadNumsBuf* buf, char* next_newline_pos, int max_num_len, lon
 
 // BUFFER_LEN > 2 * MAX_NUM_LEN
 // QUEUE_LEN > 2 * BUFFER_LEN
-// -2 if error, -1 if invalid data, 0 if nothing to read, 1 if not enough queue space, 2 if ok
+// -2 if error, -1 if invalid data, 0 if eof, 1 if nothing to read yet, 2 if not enough queue space, 3 if ok
 int recv_nums(int client_fd, ReadNumsBuf* buf, int max_num_len, ssize_t stop_recv, Queue* dest, int min_queue_freespace) {
     ssize_t total_recvd = 0;
     while (true) {
@@ -65,6 +65,9 @@ int recv_nums(int client_fd, ReadNumsBuf* buf, int max_num_len, ssize_t stop_rec
             perror("Error recieving data from client");
             return -2;
         }
+        if (recvd < 0) {
+            return 1;
+        }
         if (recvd == 0) {
             if (try_get_last_num(buf, max_num_len, dest) < 0) {
                 fprintf(stderr, "Couldn't parse last number");
@@ -73,7 +76,9 @@ int recv_nums(int client_fd, ReadNumsBuf* buf, int max_num_len, ssize_t stop_rec
             return 0;
         }
 
-        buf->buf_pos += recvd;
+        if (recvd >= 0) {
+            buf->buf_pos += recvd;
+        }
         buf->buf[buf->buf_pos] = '\0';
 
         char* next_newline_pos;
@@ -84,7 +89,7 @@ int recv_nums(int client_fd, ReadNumsBuf* buf, int max_num_len, ssize_t stop_rec
                 return -1;
             }
 
-            printf("%lld\n", next_num);
+            printf("Parsed %lld\n", next_num);
             if (!try_enqueue(dest, next_num)) {
                 fprintf(stderr, "Number queue overflow\n");
                 return -1;
@@ -106,10 +111,10 @@ int recv_nums(int client_fd, ReadNumsBuf* buf, int max_num_len, ssize_t stop_rec
 
         total_recvd += recvd;
         if (total_recvd >= stop_recv) {
-            return 2;
+            return 3;
         }
         if (get_free_count(dest) < min_queue_freespace) {
-            return 1;
+            return 2;
         }
     }
 }
@@ -130,7 +135,7 @@ int try_get_last_num(ReadNumsBuf* buf, int max_num_len, Queue* dest) {
         return -1;
     }
 
-    printf("%lld\n", last_num);
+    printf("Parsed last %lld\n", last_num);
     try_enqueue(dest, last_num);
     return 1;
 }

@@ -24,19 +24,25 @@ int make_sendbuf(size_t size, int max_sent_num_len, SendNumsBuf* dst) {
     return 0;
 }
 
+/*
+ * -1 if err, 0 if client closed, 1 if can't send yet, 2 if sent everything
+ */
 int send_nums(int client_fd, SendNumsBuf* buf) {
     while (!buf->queue.is_empty || buf->unsent_bytes > 0) {
         while (buf->unsent_bytes > 0) {
-            ssize_t sent = send(client_fd, buf->unsent_num + buf->unsent_pos, buf->unsent_bytes, MSG_DONTWAIT);
-            if (sent < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
+            ssize_t sent = send(client_fd, buf->unsent_num + buf->unsent_pos, buf->unsent_bytes, MSG_DONTWAIT | MSG_NOSIGNAL); // ?
+            if (sent < 0 && errno == EPIPE) {
                 return 0;
             }
-            if (sent < 0) {
+            if (sent < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
                 perror("Error sending number");
                 return -1;
             }
+            if (sent < 0) {
+                return 1;
+            }
             if (sent == 0) {
-                return 0;
+                return 0; // can this be?
             }
             buf->unsent_bytes -= sent;
             buf->unsent_pos += sent;
@@ -56,5 +62,5 @@ int send_nums(int client_fd, SendNumsBuf* buf) {
             buf->unsent_pos = 0;
         }
     }
-    return 0;
+    return 2;
 }

@@ -27,7 +27,7 @@ const int CLIENT_WAIT_TIME_MAXLEN = 10;
 const int DEFAULT_WAIT_TIME_MS = 10;
 
 const int MAX_BATCH_SIZE = 255;
-const int RECV_BUF_SIZE = 1024;
+const int RECV_BUF_SIZE = 65536; // can print one at a time if needed
 const int RES_QUEUE_SIZE = 2048;
 
 bool _try_get_wait_arg(int argc, char* argv[], char** dest) {

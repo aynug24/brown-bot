@@ -28,7 +28,10 @@ const int BUFFER_LEN = 1024;
 
 long long sum = 0;
 
+static char* server_full_path;
+
 void process_number(long long n, long long* res) {
+    printf("Received %lld\n", n);
     *res += sum;
     sum += n;
 }
@@ -38,6 +41,12 @@ void process_new_numbers(Queue* queue, ssize_t old_rear) {
         process_number(queue->nums[pos], &queue->nums[pos]);
     }
 }
+
+//void clean() {
+//    if (unlink(server_path) < 0) {
+//        perror("Couldn't delete server socket");
+//    }
+//}
 
 int free_recv(ReadNumsBuf* recv_bufs, int sock_count) {
     for (int i = 0; i < sock_count; ++i) {
@@ -112,8 +121,8 @@ int process_conns(
 
     for (int pollfd_idx = 0; pollfd_idx < *sockets_count; pollfd_idx++)
     {
-        if (poll_set[pollfd_idx].revents & (POLLNVAL)) {
-
+        if (poll_set[pollfd_idx].revents == 0) { // just added this socket
+            continue;
         }
 
         if (poll_set[pollfd_idx].revents & POLLIN && poll_set[pollfd_idx].fd == server_fd) {
@@ -124,9 +133,16 @@ int process_conns(
             }
             continue;
         }
+        if (poll_set[pollfd_idx].fd == server_fd) {
+            continue;
+        }
+
+        if (poll_set[pollfd_idx].revents & POLLNVAL) {
+            fprintf(stderr, "CANT HAPPEN?");
+        }
 
         ssize_t old_numqueue_rear = send_bufs[pollfd_idx].queue.rear;
-        bool nothing_to_recv = false;
+        bool nothing_to_recv = true;
         bool format_fail = false;
         if (poll_set[pollfd_idx].revents & POLLIN) {
             int recv_res = recv_nums(poll_set[pollfd_idx].fd, &recv_bufs[pollfd_idx],
@@ -141,41 +157,47 @@ int process_conns(
                 log_format_fail(stderr);
             } else if (recv_res == 0) {
                 nothing_to_recv = true;
+                poll_set[pollfd_idx].events |= POLLOUT;
+                poll_set[pollfd_idx].events &= ~POLLIN;
             }
+
+            process_new_numbers(&send_bufs[pollfd_idx].queue, old_numqueue_rear);
         }
 
-        process_new_numbers(&send_bufs[pollfd_idx].queue, old_numqueue_rear);
-
-        //if (poll_set[pollfd_idx].events & POLLOUT) {
-        if (pollfd_idx == 0) {
-            continue;
-        }
-
-        if (!(poll_set[pollfd_idx].fd & POLLNVAL)) {
-            if (send_nums(poll_set[pollfd_idx].fd, &send_bufs[pollfd_idx]) < 0) {
-                fprintf(stderr, "Error while sending to client");
-                ok = false;
-                break;
-            }
+        //if (poll_set[pollfd_idx].revents) { // & !POLLVAL?
+        bool sending_is_over = false;
+        int send_res = send_nums(poll_set[pollfd_idx].fd, &send_bufs[pollfd_idx]);
+        if (send_res < 0) {
+            fprintf(stderr, "Error while sending to client");
+            ok = false;
+            break;
+        } else if (send_res == 0) {
+            sending_is_over = true;
+        } else if (send_res == 2) {
+            sending_is_over = (poll_set[pollfd_idx].revents & POLLOUT) > 0;
         }
         //}
-        if ((poll_set[pollfd_idx].fd & POLLNVAL) || format_fail || nothing_to_recv) { //(nothing_to_recv && poll_set[pollfd_idx].events & POLLHUP)) {
+        //if ((poll_set[pollfd_idx].revents & POLLNVAL) || format_fail || nothing_to_recv) { //(nothing_to_recv && poll_set[pollfd_idx].events & POLLHUP)) {
+        if (format_fail || sending_is_over) { //(nothing_to_recv && poll_set[pollfd_idx].events & POLLHUP)) {
             if (close_socket(pollfd_idx, poll_set, sockets_count, recv_bufs, send_bufs) < 0) {
                 fprintf(stderr, "Couldn't close socket\n");
                 ok = false;
                 break;
             }
+            --pollfd_idx; // iterate over (foremrly) last socket
         }
     }
 
     return ok ? 0 : -1;
 }
 
-int main() { // todo atexit
+int main() {
+    atexit(clean);
+
     bool ok = true;
     printf("I'm server!\n");
 
-    const char* server_full_path = get_server_full_path();
+    server_full_path = get_server_full_path();
     if (server_full_path == NULL) {
         fprintf(stderr, "Couldn't read server path\n");
         ok = false;
@@ -231,6 +253,5 @@ int main() { // todo atexit
         free_send(send_bufs, sockets_count);
     }
 
-    unlink(server_full_path); // ?
     return 0;
 }
