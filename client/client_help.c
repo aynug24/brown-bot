@@ -1,8 +1,13 @@
+//
+// Created by sergei on 29.05.22.
+//
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "config_read.h"
-#include "socket_help.h"
+#include "../config_read.h"
+#include "../socket_help.h"
+#include "../data_structs/readnumsbuf.h"
 #include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -13,16 +18,19 @@
 #include <sys/types.h>
 #include <sys/un.h>
 #include <ctype.h>
-#include <time.h>
 #include <limits.h>
+#include <time.h>
+#include "client_help.h"
 
 const int CLIENT_PATH_MAXLEN = 1024; // todo разнести константы туда где должны быть (или избавиться)
 const int CLIENT_WAIT_TIME_MAXLEN = 10;
-const int DEFAULT_WAIT_TIME_MS = 200;
+const int DEFAULT_WAIT_TIME_MS = 10;
 
-const int MAX_BATCH_SIZE = 3;
+const int MAX_BATCH_SIZE = 255;
+const int RECV_BUF_SIZE = 1024;
+const int RES_QUEUE_SIZE = 2048;
 
-bool try_get_wait_arg(int argc, char* argv[], char** dest) {
+bool _try_get_wait_arg(int argc, char* argv[], char** dest) {
     opterr = 0;
     int argname;
     while ((argname = getopt(argc, argv, "w:")) != -1) {
@@ -32,9 +40,9 @@ bool try_get_wait_arg(int argc, char* argv[], char** dest) {
                 return true;
             case '?':
                 if (optopt == 'w')
-                    fprintf(stderr, "Option -%c requires an argument.\n", (char)optopt);
+                    fprintf(stderr, "Option -%c requires an argument.\n", (char) optopt);
                 else if (isprint(optopt))
-                    fprintf(stderr, "Unknown option `-%c'.\n", (char)optopt);
+                    fprintf(stderr, "Unknown option `-%c'.\n", (char) optopt);
                 else
                     fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
                 return false;
@@ -54,25 +62,28 @@ long get_wait_time(int argc, char* argv[]) {
         perror("Couldn't allocate memory for wait time");
     }
 
-    if (!try_get_wait_arg(argc, argv, &wait_time_str)) {
+    char* old_wait_time = wait_time_str;
+    if (!_try_get_wait_arg(argc, argv, &wait_time_str)) {
         fprintf(stderr, "Error while parsing arguments\n");
     }
     if (wait_time_str == NULL) {
+        free(old_wait_time);
         return DEFAULT_WAIT_TIME_MS;
     }
 
+    bool ok = true;
     char* arg_end = NULL;
     const long wait_time = strtol(wait_time_str, &arg_end, 10);
     if (*wait_time_str == '\0' || *arg_end != '\0') {
         fprintf(stderr, "Invalid wait time argument format: \"%s\"\n", wait_time_str);
-        return -1;
-    }
-    if (wait_time < 0) {
+        ok = false;
+    } else if (wait_time < 0) {
         fprintf(stderr, "Argument value error: negative wait time %ld", wait_time);
-        return -1;
+        ok = false;
     }
 
-    return wait_time;
+    free(wait_time_str);
+    return ok ? wait_time : -1;
 }
 
 int rand_range(int min, int max) { // not really uniform buuut
@@ -80,23 +91,7 @@ int rand_range(int min, int max) { // not really uniform buuut
     return min + (r % (max - min + 1));
 }
 
-void print_escaped(const char* src, ssize_t n) {
-    for (int i = 0; i < n; ++i) {
-        char c = *(src+i);
-        switch (*(src + i)) {
-            case '\n':
-                printf("\\n");
-                break;
-            default:
-                printf("%c", *(src + i));
-                break;
-        }
-    }
-    //fflush(stdout);
-}
-
-int msleep(long ms)
-{
+int msleep(long ms) {
     struct timespec ts;
     int res;
 
@@ -113,51 +108,39 @@ int msleep(long ms)
     return res;
 }
 
-int main(int argc, char* argv[]) {
-    bool ok = true;
-    long wait = get_wait_time(argc, argv);
-    if (wait < 0) {
-        fprintf(stderr, "Error getting wait time");
-        ok = false;
+int get_connected_client_sock(int argc, char* argv[], char** server_full_path, char** client_full_path, long* wait_ms) {
+    printf("I'm client!\n"); // todo удалить отладочные принты
+
+    *wait_ms = get_wait_time(argc, argv);
+    if (*wait_ms < 0) {
+        fprintf(stderr, "Couldn't determine wait value\n");
+        return -1;
     }
 
-
-
-    char* buf;
-    if (ok) {
-        srand(time(NULL));
-        buf = malloc(MAX_BATCH_SIZE * sizeof(*buf));
-        if (buf == NULL) {
-            perror("Couldn't allocate buf for input");
-            ok = false;
-        }
+    *client_full_path = malloc(CLIENT_PATH_MAXLEN);
+    if (*client_full_path == NULL) {
+        perror("Couldn't allocate socket path string");
+        return -1;
     }
 
-    if (ok) {
-        while (true) {
-            int bytes_to_read = rand_range(1, MAX_BATCH_SIZE);
-            ssize_t bytes_read = read(STDIN_FILENO, buf, bytes_to_read);
-            if (bytes_read == -1) {
-                perror("Error reading input");
-                ok = false;
-                break;
-            }
-            if (bytes_read == 0) { // its eof if using read
-                break;
-            }
-
-            print_escaped(buf, bytes_read);
-            printf("\n");
-
-            if (msleep(wait) < 0) {
-                fprintf(stderr, "Couldn't sleep after input");
-                ok = false;
-                break;
-            }
-        }
+    *server_full_path = get_server_full_path();
+    if (*server_full_path == NULL) {
+        fprintf(stderr, "Couldn't read server path\n");
+        return -1;
     }
 
-    printf("I ENDED");
+    int client_fd = make_temp_socket(AF_UNIX, SOCK_STREAM, 0, *client_full_path);
+    if (client_fd == -1) {
+        fprintf(stderr, "Couldn't make client socket\n");
+        return -1;
+    }
 
-    return 0;
+    struct sockaddr_un server_addr = make_sockaddr(*server_full_path);
+    if (connect(client_fd, (struct sockaddr*) &server_addr, sizeof(server_addr)) < 0) {
+        perror("Couldn't connect to server");
+        return -1;
+    }
+
+    return client_fd;
 }
+

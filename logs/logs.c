@@ -10,8 +10,9 @@ const char* INC_STRING = "INC_STRING";
 const char* SND_ANSWR = "SND_ANSWR";
 const char* RCV_ANSWR = "RCV_ANSWR";
 const char* TTL_SLP = "TOTAL_SLP";
+const char* FMT_FAIL = "FMT_FAIL";
 
-int f_escape_newline(FILE* file, char* str) {
+int _f_escape_newline(FILE* file, char* str) {
     for (int i = 0; str[i] != '\0'; ++i) {
         if (str[i] != '\n') {
             if (fputc(str[i], file) == EOF) {
@@ -32,7 +33,7 @@ int log_incoming_string(FILE* file, char* str) {
         return print_res;
     }
 
-    int escape_res = f_escape_newline(file, str);
+    int escape_res = _f_escape_newline(file, str);
     if (escape_res < 0) {
         return escape_res;
     }
@@ -53,4 +54,8 @@ int log_receiving_answer(FILE* file, long long answer) {
 
 int log_total_sleep(FILE* file, int total_sleep) {
     return fprintf(file, "%ld %s %d\n", time(NULL), TTL_SLP, total_sleep);
+}
+
+int log_format_fail(FILE* file) {
+    return fprintf(file, "%ld %s\n", time(NULL), FMT_FAIL);
 }

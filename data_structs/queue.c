@@ -18,6 +18,16 @@ int make_queue(size_t capacity, Queue* dst) {
     return 0;
 }
 
+size_t get_free_count(Queue* queue) {
+    if (queue->is_empty) {
+        return queue->capacity;
+    }
+    if (queue->front < queue->rear) {
+        return queue->capacity - (queue->rear - queue->front);
+    }
+    return queue->front - queue->rear;
+}
+
 bool try_enqueue(Queue* queue, long long n) {
     if ((queue->rear == queue->front) && !queue->is_empty) {
         return false;
@@ -38,4 +48,8 @@ bool try_dequeue(Queue* queue, long long* dst) {
     queue->front = (queue->front + 1) % queue->capacity;
     queue->is_empty = (queue->front == queue->rear);
     return true;
+}
+
+bool is_full(Queue* queue) {
+    return !queue->is_empty && (queue->front == queue->rear);
 }

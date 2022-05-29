@@ -41,7 +41,7 @@ char* get_param(const char* param_name) {
             free(config_line);
             return NULL;
         }
-        printf("%s\n", config_line);
+        //printf("%s\n", config_line);
 
         //char* param_value = strtok(config_line, "=");
         char* param_name_end = strchr(config_line, '=');
@@ -52,7 +52,7 @@ char* get_param(const char* param_name) {
         *param_name_end = '\0';
         const char* param_value = param_name_end + 1;
 
-        printf("%s %s\n", config_line, param_value);
+        //printf("%s %s\n", config_line, param_value);
         const long param_name_len = param_value - config_line - 1;
         if (param_name_len != strlen(param_name)) {
             continue;

@@ -87,7 +87,7 @@ int close_temp_socket(const char* full_socket_path) {
     if (rmdir(path_cpy) < 0) {
         perror("Couldn't remove client socket directory");
         return -1;
-    };
+    }
     return 0;
 }
 

@@ -14,8 +14,8 @@
 #include <poll.h>
 #include <fcntl.h>
 #include <assert.h>
-#include "config_read.h" // its bad...
-#include "socket_help.h"
+#include "../config_read.h" // its bad...
+#include "../socket_help.h"
 
 #ifndef BROWN_BOT_QUEUE_H
 #define BROWN_BOT_QUEUE_H
@@ -31,8 +31,12 @@ typedef struct Queue {
 
 int make_queue(size_t capacity, Queue* dst);
 
+size_t get_free_count(Queue* queue);
+
 bool try_enqueue(Queue* queue, long long n);
 
 bool try_dequeue(Queue* queue, long long* dst);
+
+bool is_full(Queue* queue);
 
 #endif //BROWN_BOT_QUEUE_H
