@@ -35,7 +35,7 @@ int parse_buf_num(ReadNumsBuf* buf, char* next_newline_pos, int max_num_len, lon
 // -2 if error, -1 if invalid data, 0 if ok
 int recv_nums(int client_fd, ReadNumsBuf* buf, int max_num_len, long long* dest) {
     while (true) {
-        ssize_t recvd = recv(client_fd, buf->buf + buf->buf_pos, buf->buf_len - buf->buf_pos);
+        ssize_t recvd = recv(client_fd, buf->buf + buf->buf_pos, buf->buf_len - buf->buf_pos, MSG_DONTWAIT);
         if (recvd < 0) {
             perror("Error recieving data from client");
             return -2;
