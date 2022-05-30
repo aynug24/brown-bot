@@ -70,7 +70,7 @@ int recv_nums(int client_fd, ReadNumsBuf* buf, int max_num_len, ssize_t stop_rec
         }
         if (recvd == 0) {
             if (try_get_last_num(buf, max_num_len, dest) < 0) {
-                fprintf(stderr, "Couldn't parse last number");
+                fprintf(stderr, "Couldn't parse last number\n");
                 return -2;
             }
             return 0;
@@ -136,7 +136,7 @@ int try_get_last_num(ReadNumsBuf* buf, int max_num_len, Queue* dest) {
 
     long long last_num;
     if (parse_buf_num(buf, buf->buf + buf->buf_pos, max_num_len, &last_num) < 0) {
-        fprintf(stderr, "Error parsing last line");
+        fprintf(stderr, "Error parsing last line\n");
         return -1;
     }
 

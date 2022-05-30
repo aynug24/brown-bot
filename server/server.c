@@ -118,17 +118,23 @@ int accept_new_conn(int server_fd, struct pollfd poll_set[], int* sockets_count,
     }
 
     if (make_readbuf(BUFFER_LEN, recv_bufs + *sockets_count) < 0) {
-        fprintf(stderr, "Error creating readbuf");
+        fprintf(stderr, "Error creating readbuf\n");
         return -1;
     }
     if (make_sendbuf(BUFFER_LEN, MAX_SENT_NUM_LEN, send_bufs + *sockets_count) < 0) {
-        fprintf(stderr, "Error creating sendbuf");
+        fprintf(stderr, "Error creating sendbuf\n");
         return -1;
     }
 
     poll_set[*sockets_count].fd = client_fd;
     poll_set[*sockets_count].events = POLLIN | /*POLLOUT |*/ POLLHUP;
     (*sockets_count)++;
+
+    if (log_incoming_connection(log_file, client_fd) < 0) {
+        fprintf(stderr, "Error logging new connection\n");
+        return -1;
+    }
+
     return 0;
 }
 
@@ -178,7 +184,7 @@ int process_conns(
         }
 
         if (poll_set[pollfd_idx].revents & POLLNVAL) {
-            fprintf(stderr, "CANT HAPPEN?");
+            fprintf(stderr, "CANT HAPPEN?\n");
         }
 
         ssize_t old_numqueue_rear = send_bufs[pollfd_idx].queue.rear;
@@ -208,7 +214,7 @@ int process_conns(
         bool sending_is_over = false;
         int send_res = send_nums(poll_set[pollfd_idx].fd, &send_bufs[pollfd_idx], log_file);
         if (send_res < 0) {
-            fprintf(stderr, "Error while sending to client");
+            fprintf(stderr, "Error while sending to client\n");
             ok = false;
             break;
         } else if (send_res == 0) {
@@ -266,7 +272,7 @@ int main(int argc, char* argv[]) {
         strcpy(sockaddr.sun_path, server_full_path);
 
         if (bind_assuring_dirs(server_fd, &sockaddr, server_full_path) < 0) {
-            fprintf(stderr, "Couldn't bind server socket");
+            fprintf(stderr, "Couldn't bind server socket\n");
             ok = false;
         }
     }
@@ -292,7 +298,7 @@ int main(int argc, char* argv[]) {
 
         while (true) {
             if (process_conns(server_fd, poll_set, &sockets_count, recv_bufs, send_bufs) < 0) {
-                fprintf(stderr, "Error while processing connections");
+                fprintf(stderr, "Error while processing connections\n");
                 ok = false;
                 break;
             }

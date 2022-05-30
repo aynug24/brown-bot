@@ -114,7 +114,7 @@ int main() {
     if (ok && buf.buf_pos - buf.last_num_start > 0) {
         long long last_num;
         if (parse_buf_num(&buf, buf.buf + buf.buf_pos, &last_num) < 0) {
-            fprintf(stderr, "Error parsing last line");
+            fprintf(stderr, "Error parsing last line\n");
             bool ok = false;
         }
 

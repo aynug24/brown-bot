@@ -14,7 +14,5 @@ done
 
 for ((i=1;i<=client_count;i++));
 do
-  echo i
-  echo "/tmp/brown-bot/logs/client_${i}.log"
   rm -f "/tmp/brown-bot/logs/client_${i}.log"
 done

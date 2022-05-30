@@ -68,7 +68,7 @@ long get_wait_time(int argc, char* argv[]) {
         return -1;
     }
     if (wait_time < 0) {
-        fprintf(stderr, "Argument value error: negative wait time %ld", wait_time);
+        fprintf(stderr, "Argument value error: negative wait time %ld\n", wait_time);
         return -1;
     }
 
@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
     bool ok = true;
     long wait = get_wait_time(argc, argv);
     if (wait < 0) {
-        fprintf(stderr, "Error getting wait time");
+        fprintf(stderr, "Error getting wait time\n");
         ok = false;
     }
 
@@ -150,7 +150,7 @@ int main(int argc, char* argv[]) {
             printf("\n");
 
             if (msleep(wait) < 0) {
-                fprintf(stderr, "Couldn't sleep after input");
+                fprintf(stderr, "Couldn't sleep after input\n");
                 ok = false;
                 break;
             }

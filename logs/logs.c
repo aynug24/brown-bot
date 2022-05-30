@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include <malloc.h>
 #include <string.h>
+#include <unistd.h>
 #include "logs.h"
 #include "../config_read/config_read.h" // terrible but ok
 #include "../socket_help.h"
@@ -14,9 +15,10 @@ const char* LOGS_DIR = "logs/"; // ${BOT_DIR}${LOGS_DIR} = /tmp/brown-bot/logs/
 const char* DEFAULT_LOG_PATH = "/dev/null"; // ))))
 
 const char* INC_STRING = "INC_STRING";
+const char* INC_CONN = "INC_CONN";
 const char* SND_ANSWR = "SND_ANSWR";
 const char* RCV_ANSWR = "RCV_ANSWR";
-const char* TTL_SLP = "TOTAL_SLP";
+const char* TTL_SLP = "TTL_SLP";
 const char* FMT_FAIL = "FMT_FAIL";
 
 const int MAX_LOG_REL_PATH_LEN = 256;
@@ -39,6 +41,12 @@ int _f_escape_newline(FILE* file, char* str, ssize_t len) {
     return 0;
 }
 
+long _get_time_ms() {
+    struct timespec tc;
+    clock_gettime(CLOCK_REALTIME, &tc);
+    return tc.tv_sec * 1000 + tc.tv_nsec / 1000000;
+}
+
 int open_log(char* log_path, FILE** res) { // only one parameter in both scripts, so won't need to parse again
     //printf("Opening log %s\n", log_path == NULL ? "NULL" : log_path);
     char* full_log_path = malloc(MAX_LOG_FULL_PATH_LEN);
@@ -59,7 +67,7 @@ int open_log(char* log_path, FILE** res) { // only one parameter in both scripts
     }
 
     if (mkdirs(full_log_path) < 0) {
-        fprintf(stderr, "Couldn't create directory for logs");
+        fprintf(stderr, "Couldn't create directory for logs\n");
         free(full_log_path);
         return -1;
     }
@@ -75,8 +83,12 @@ int open_log(char* log_path, FILE** res) { // only one parameter in both scripts
     return 0;
 }
 
+int log_incoming_connection(FILE* file, int fd) {
+    return fprintf(file, "%ld %s %d %p\n", _get_time_ms(), INC_CONN, fd, sbrk(0));
+}
+
 int log_incoming_string(FILE* file, char* str, ssize_t len) {
-    int print_res = fprintf(file, "%ld %s ", clock() / CLOCKS_PER_MS /*time(NULL)*/, INC_STRING);
+    int print_res = fprintf(file, "%ld %s ", _get_time_ms(), INC_STRING);
     if (print_res < 0) {
         return print_res;
     }
@@ -93,18 +105,18 @@ int log_incoming_string(FILE* file, char* str, ssize_t len) {
 }
 
 int log_sending_answer(FILE* file, long long answer) {
-    return fprintf(file, "%ld %s %lld\n", clock() / CLOCKS_PER_MS /*time(NULL)*/, SND_ANSWR, answer);
+    return fprintf(file, "%ld %s %lld\n", _get_time_ms(), SND_ANSWR, answer);
 }
 
 int log_receiving_answer(FILE* file, long long answer) {
-    return fprintf(file, "%ld %s %lld\n", clock() / CLOCKS_PER_MS /*time(NULL)*/, RCV_ANSWR, answer);
+    return fprintf(file, "%ld %s %lld\n", _get_time_ms(), RCV_ANSWR, answer);
 }
 
 int log_total_sleep(FILE* file, long long total_sleep_ns) {
     long long total_sleep_ms = total_sleep_ns / 1000000;
-    return fprintf(file, "%ld %s %lld\n", clock() / CLOCKS_PER_MS /*time(NULL)*/, TTL_SLP, total_sleep_ms);
+    return fprintf(file, "%ld %s %lld\n", _get_time_ms(), TTL_SLP, total_sleep_ms);
 }
 
 int log_format_fail(FILE* file) {
-    return fprintf(file, "%ld %s\n", clock() / CLOCKS_PER_MS /*time(NULL)*/, FMT_FAIL);
+    return fprintf(file, "%ld %s\n", _get_time_ms() / CLOCKS_PER_MS, FMT_FAIL);
 }

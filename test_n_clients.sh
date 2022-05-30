@@ -23,7 +23,12 @@ done
 
 wait
 
-if [ "$(./bb_zerosum)" -eq 0 ]; then
+echo "Expected: 0"
+
+actual=$(./bb_zerosum)
+echo "Actual: ${actual}"
+
+if [ $((actual)) -eq 0 ]; then
     echo SUCCESS: Server sum is zero.
 else
     echo FAIL: Server sum is not zero.

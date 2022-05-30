@@ -16,6 +16,7 @@ extern const int MAX_LOG_FULL_PATH_LEN;
 
 int open_log(char* log_path, FILE** res);
 
+int log_incoming_connection(FILE* file, int fd);
 int log_incoming_string(FILE* file, char* str, ssize_t len);
 int log_sending_answer(FILE* file, long long answer);
 int log_receiving_answer(FILE* file, long long answer);

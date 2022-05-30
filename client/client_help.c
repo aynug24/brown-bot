@@ -88,7 +88,7 @@ int get_client_args(int argc, char* argv[], ClientArguments* arguments) {
     char* old_wait_time = wait_time_str;
     char* old_log_path = log_file_path;
     if (get_wait_and_log(argc, argv, &wait_time_str, &log_file_path) < 0) {
-        fprintf(stderr, "Couldn't parse client arguments");
+        fprintf(stderr, "Couldn't parse client arguments\n");
         ok = false;
     }
 
@@ -101,7 +101,7 @@ int get_client_args(int argc, char* argv[], ClientArguments* arguments) {
             fprintf(stderr, "Invalid wait time argument format: \"%s\"\n", wait_time_str);
             ok = false;
         } else if (wait_time < 0) {
-            fprintf(stderr, "Argument value error: negative wait time %ld", wait_time);
+            fprintf(stderr, "Argument value error: negative wait time %ld\n", wait_time);
             ok = false;
         } else {
             arguments->wait_time = wait_time;

@@ -94,7 +94,7 @@ int close_temp_socket(const char* full_socket_path) {
 //struct sockaddr_un* make_server_sockaddr() {
 //    const char* server_full_path = get_server_full_path();
 //    if (server_full_path == NULL) {
-//        fprintf(stderr, "Couldn't read server path");
+//        fprintf(stderr, "Couldn't read server path\n");
 //        return NULL;
 //    }
 //
@@ -134,7 +134,7 @@ int mkdirs(const char* path) {
 
 int bind_assuring_dirs(int fd, struct sockaddr_un* addr, const char* full_path) {
     if (mkdirs(full_path) < 0) {
-        fprintf(stderr, "Couldn't create dirs");
+        fprintf(stderr, "Couldn't create dirs\n");
         return -1;
     }
 

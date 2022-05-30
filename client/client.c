@@ -54,20 +54,19 @@ int send_stdin_recv_sums(int client_fd, char* recv_buf, ssize_t* total_recvd) {
             break;
         }
         if (recvd >= 0) {
+            //printf("%.*s\n", recvd, recv_buf + *total_recvd);
             *total_recvd += recvd;
         }
 
-        //printf("%d SLEEPS AT %ld\n", getpid(), clock());
         struct timespec sleep_start, sleep_end;
         clock_gettime(CLOCK_REALTIME, &sleep_start);
         if (msleep(args.wait_time) < 0) {
-            fprintf(stderr, "Couldn't sleep after input");
+            fprintf(stderr, "Couldn't sleep after input\n");
             ok = false;
             break;
         }
         clock_gettime(CLOCK_REALTIME, &sleep_end);
         total_sleep_ns += 1000000000LL * (sleep_end.tv_sec - sleep_start.tv_sec) + (sleep_end.tv_nsec - sleep_start.tv_nsec);
-        //printf("%d WAKES AT %ld; SLEPT FOR %ld TICKS; EXPECTED %ld MS\n", getpid(), time(NULL), sleep_end - sleep_start, args.wait_time);
     }
 
     free(read_buf);
@@ -92,7 +91,7 @@ int main(int argc, char* argv[]) {
         if (client_fd < 0) {
             ok = false;
         }
-        //printf("Set wait to %ld\n", wait_ms);
+        //printf("!%ld!", args.wait_time);
     }
 
     ssize_t total_recvd;
