@@ -89,7 +89,7 @@ int recv_nums(int client_fd, ReadNumsBuf* buf, int max_num_len, ssize_t stop_rec
                 return -1;
             }
 
-            printf("Parsed %lld\n", next_num);
+            //printf("Parsed %lld\n", next_num);
             if (!try_enqueue(dest, next_num)) {
                 fprintf(stderr, "Number queue overflow\n");
                 return -1;
@@ -135,7 +135,7 @@ int try_get_last_num(ReadNumsBuf* buf, int max_num_len, Queue* dest) {
         return -1;
     }
 
-    printf("Parsed last %lld\n", last_num);
+    //printf("Parsed last %lld\n", last_num);
     try_enqueue(dest, last_num);
     return 1;
 }

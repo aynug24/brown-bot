@@ -3,10 +3,11 @@ project(brown-bot C)
 
 set(CMAKE_C_STANDARD 17)
 
-add_executable(bb_server DataStructs/queue.c DataStructs/queue.h Server/server.c ConfigRead/config_read.c ConfigRead/config_read.h socket_help.c socket_help.h Logs/logs.c Logs/logs.h DataStructs/readnumsbuf.c DataStructs/readnumsbuf.h DataStructs/sendnumsbuf.c DataStructs/sendnumsbuf.h)
-add_executable(bb_client Client/client.c ConfigRead/config_read.c ConfigRead/config_read.h socket_help.c socket_help.h Logs/logs.c Logs/logs.h DataStructs/readnumsbuf.c DataStructs/readnumsbuf.h Client/client_help.c Client/client_help.h DataStructs/queue.h DataStructs/queue.c DataStructs/sendnumsbuf.c DataStructs/sendnumsbuf.h)
-# add_executable(bb_test test.c ConfigRead.c ConfigRead.h socket_help.c socket_help.h readnumsbuf.c readnumsbuf.h)
-# add_executable(bb_test2 test2.c queue.h queue.c ConfigRead.c ConfigRead.h socket_help.c socket_help.h readnumsbuf.c readnumsbuf.h)
-add_executable(bb_zerosum Client/get_state_client.c ConfigRead/config_read.c ConfigRead/config_read.h socket_help.c socket_help.h Logs/logs.c Logs/logs.h DataStructs/readnumsbuf.c DataStructs/readnumsbuf.h Client/client_help.c Client/client_help.h DataStructs/sendnumsbuf.c DataStructs/sendnumsbuf.h DataStructs/queue.h DataStructs/queue.c)
+add_executable(bb_server data_structs/queue.c data_structs/queue.h server/server.c config_read/config_read.c config_read/config_read.h socket_help.c socket_help.h logs/logs.c logs/logs.h data_structs/readnumsbuf.c data_structs/readnumsbuf.h data_structs/sendnumsbuf.c data_structs/sendnumsbuf.h)
+add_executable(bb_client client/client.c config_read/config_read.c config_read/config_read.h socket_help.c socket_help.h logs/logs.c logs/logs.h data_structs/readnumsbuf.c data_structs/readnumsbuf.h client/client_help.c client/client_help.h data_structs/queue.h data_structs/queue.c data_structs/sendnumsbuf.c data_structs/sendnumsbuf.h)
+# add_executable(bb_test test.c config_read.c config_read.h socket_help.c socket_help.h readnumsbuf.c readnumsbuf.h)
+# add_executable(bb_test2 test2.c queue.h queue.c config_read.c config_read.h socket_help.c socket_help.h readnumsbuf.c readnumsbuf.h)
+add_executable(bb_zerosum client/get_state_client.c config_read/config_read.c config_read/config_read.h socket_help.c socket_help.h logs/logs.c logs/logs.h data_structs/readnumsbuf.c data_structs/readnumsbuf.h client/client_help.c client/client_help.h data_structs/sendnumsbuf.c data_structs/sendnumsbuf.h data_structs/queue.h data_structs/queue.c)
 
-file(COPY config test_zerosum.txt runme.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY config test_zerosum.txt runme.sh test_n_clients.sh DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
+        FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_WRITE GROUP_READ GROUP_EXECUTE WORLD_READ)

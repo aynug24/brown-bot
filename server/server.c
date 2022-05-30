@@ -31,7 +31,7 @@ long long sum = 0;
 static char* server_full_path;
 
 void process_number(long long n, long long* res) {
-    printf("Received %lld\n", n);
+    //printf("Received %lld\n", n);
     *res += sum;
     sum += n;
 }
@@ -71,7 +71,7 @@ int accept_new_conn(int server_fd, struct pollfd poll_set[], int* sockets_count,
     int client_len = sizeof(client_address);
     int client_fd = accept(
             server_fd, (struct sockaddr*) &client_address, (socklen_t*) &client_len);
-    printf("Adding client on fd %d\n", client_fd);
+    //printf("Adding client on fd %d\n", client_fd);
     if (client_fd < 0) {
         perror("Error accepting connection");
         return -1;
@@ -94,7 +94,7 @@ int accept_new_conn(int server_fd, struct pollfd poll_set[], int* sockets_count,
 
 int close_socket(int fd_idx, struct pollfd poll_set[], int* sockets_count,
                          ReadNumsBuf* recv_bufs, SendNumsBuf* send_bufs) {
-    printf("Removing client on fd %d\n", poll_set[fd_idx].fd);
+    //printf("Removing client on fd %d\n", poll_set[fd_idx].fd);
     if (close(poll_set[fd_idx].fd) < 0) {
         perror("Couldn't close socket");
         return -1;
@@ -116,7 +116,7 @@ int process_conns(
         int server_fd, struct pollfd poll_set[], int* sockets_count,
                 ReadNumsBuf* recv_bufs, SendNumsBuf* send_bufs) {
     bool ok = true;
-    printf("Waiting for client (%d total)...\n", *sockets_count);
+    //printf("Waiting for client (%d total)...\n", *sockets_count);
     poll(poll_set, *sockets_count, POLL_TIMEOUT);
 
     for (int pollfd_idx = 0; pollfd_idx < *sockets_count; pollfd_idx++)

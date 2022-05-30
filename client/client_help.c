@@ -109,7 +109,7 @@ int msleep(long ms) {
 }
 
 int get_connected_client_sock(int argc, char* argv[], char** server_full_path, char** client_full_path, long* wait_ms) {
-    printf("I'm client!\n"); // todo удалить отладочные принты
+    //printf("I'm client!\n"); // todo удалить отладочные принты
 
     *wait_ms = get_wait_time(argc, argv);
     if (*wait_ms < 0) {

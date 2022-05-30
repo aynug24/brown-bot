@@ -53,11 +53,13 @@ int send_stdin_recv_sums(long wait_ms, int client_fd, char* recv_buf, ssize_t* t
             *total_recvd += recvd;
         }
 
+        //printf("%d SLEEPS AT %ld\n", getpid(), time(NULL));
         if (msleep(wait_ms) < 0) {
             fprintf(stderr, "Couldn't sleep after input");
             ok = false;
             break;
         }
+        //printf("%d WAKES AT %ld\n", getpid(), time(NULL));
     }
 
     free(read_buf);
@@ -82,6 +84,7 @@ int main(int argc, char* argv[]) {
         if (client_fd < 0) {
             ok = false;
         }
+        //printf("Set wait to %ld\n", wait_ms);
     }
 
     ssize_t total_recvd;
@@ -111,7 +114,7 @@ int main(int argc, char* argv[]) {
             total_recvd += last_recv;
         }
         recv_buf[total_recvd] = '\0';
-        printf("%s", recv_buf);
+        //printf("%s", recv_buf);
     }
 
     if (close_temp_socket(full_client_addr) < 0) {
