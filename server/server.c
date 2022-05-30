@@ -1,13 +1,12 @@
 #include <stdio.h>
 #include <unistd.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <stdbool.h>
 #include <memory.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <sys/un.h>
 #include <poll.h>
+#include <ctype.h>
 #include "../config_read/config_read.h" // its bad...
 #include "../socket_help.h"
 #include "../data_structs/readnumsbuf.h"
@@ -28,7 +27,9 @@ const int BUFFER_LEN = 1024;
 
 long long sum = 0;
 
-static char* server_full_path;
+static char* server_full_path; // it was an attempt to unlink socket in atexit
+
+FILE* log_file = NULL;
 
 void process_number(long long n, long long* res) {
     //printf("Received %lld\n", n);
@@ -42,19 +43,58 @@ void process_new_numbers(Queue* queue, ssize_t old_rear) {
     }
 }
 
-//void clean() {
-//    if (unlink(server_path) < 0) {
-//        perror("Couldn't delete server socket");
-//    }
-//}
+int set_log_file(int argc, char* argv[]) {
+    char* log_path_rel = malloc(MAX_LOG_REL_PATH_LEN);
+    if (log_path_rel == NULL) {
+        perror("Couldn't allocate memory for log path");
+        return -1;
+    }
 
-int free_recv(ReadNumsBuf* recv_bufs, int sock_count) {
+    bool found_log;
+    opterr = 0;
+    int argname;
+    while ((argname = getopt(argc, argv, "l:")) != -1) {
+        switch (argname) {
+            case 'l':
+                strcpy(log_path_rel, optarg);
+                found_log = true;
+                break;
+            case '?':
+                if (optopt == 'w')
+                    fprintf(stderr, "Option -%c requires an argument.\n", (char) optopt);
+                else if (isprint(optopt))
+                    fprintf(stderr, "Unknown option `-%c'.\n", (char) optopt);
+                else
+                    fprintf(stderr, "Unknown option character `\\x%x'.\n", optopt);
+                return -1;
+            default:
+                fprintf(stderr, "Unknown getopt return");
+                return -1;
+        }
+    }
+
+    if (!found_log) {
+        free(log_path_rel);
+        log_path_rel = NULL;
+    }
+
+    if (open_log(log_path_rel, &log_file) < 0) {
+        fprintf(stderr, "Couldn't open log\n");
+        free(log_path_rel);
+        return -1;
+    }
+
+    free(log_path_rel);
+    return 0;
+}
+
+void free_recv(ReadNumsBuf* recv_bufs, int sock_count) {
     for (int i = 0; i < sock_count; ++i) {
         free(recv_bufs[i].buf);
     }
 }
 
-int free_send(SendNumsBuf* send_bufs, int sock_count) {
+void free_send(SendNumsBuf* send_bufs, int sock_count) {
     for (int i = 0; i < sock_count; ++i) {
         free(send_bufs[i].queue.nums);
         free(send_bufs[i].unsent_num);
@@ -146,7 +186,7 @@ int process_conns(
         bool format_fail = false;
         if (poll_set[pollfd_idx].revents & POLLIN) {
             int recv_res = recv_nums(poll_set[pollfd_idx].fd, &recv_bufs[pollfd_idx],
-                      MAX_NUM_LEN, MAX_ONEPOLL_RECV, &send_bufs[pollfd_idx].queue, MIN_QUEUE_FREESPACE);
+                      MAX_NUM_LEN, MAX_ONEPOLL_RECV, &send_bufs[pollfd_idx].queue, MIN_QUEUE_FREESPACE, log_file);
             if (recv_res == -2) {
                 fprintf(stderr, "Error receiving data\n");
                 ok = false;
@@ -166,7 +206,7 @@ int process_conns(
 
         //if (poll_set[pollfd_idx].revents) { // & !POLLVAL?
         bool sending_is_over = false;
-        int send_res = send_nums(poll_set[pollfd_idx].fd, &send_bufs[pollfd_idx]);
+        int send_res = send_nums(poll_set[pollfd_idx].fd, &send_bufs[pollfd_idx], log_file);
         if (send_res < 0) {
             fprintf(stderr, "Error while sending to client");
             ok = false;
@@ -184,6 +224,7 @@ int process_conns(
                 ok = false;
                 break;
             }
+            fflush(log_file); // in order to examine the logs
             --pollfd_idx; // iterate over (foremrly) last socket
         }
     }
@@ -191,16 +232,23 @@ int process_conns(
     return ok ? 0 : -1;
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     //atexit(clean);
 
     bool ok = true;
-    printf("I'm server!\n");
+    //printf("I'm server!\n");
 
-    server_full_path = get_server_full_path();
-    if (server_full_path == NULL) {
-        fprintf(stderr, "Couldn't read server path\n");
+    if (set_log_file(argc, argv) < 0) {
+        fprintf(stderr, "Error opening log\n");
         ok = false;
+    }
+
+    if (ok) {
+        server_full_path = get_server_full_path();
+        if (server_full_path == NULL) {
+            fprintf(stderr, "Couldn't read server path\n");
+            ok = false;
+        }
     }
 
     int server_fd;

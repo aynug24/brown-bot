@@ -21,11 +21,11 @@ int make_temp_socket(int domain, int type, int protocol, char* full_sock_path) {
 
     char* full_template = NULL;
     if (ok) {
-        full_template = malloc(strlen(SOCKETS_DIR) + strlen(TMP_DIR_TEMPLATE) + 1);
+        full_template = malloc(strlen(BOT_DIR) + strlen(TMP_DIR_TEMPLATE) + 1);
         if (full_template == NULL) {
             perror("Couldn't allocate temp socket dir name");
             ok = false;
-        } else if (sprintf(full_template, "%s%s", SOCKETS_DIR, TMP_DIR_TEMPLATE) < 0) {
+        } else if (sprintf(full_template, "%s%s", BOT_DIR, TMP_DIR_TEMPLATE) < 0) {
             perror("Couldn't concat temp socket dir name");
             ok = false;
         }

@@ -14,10 +14,14 @@
 #include <time.h>
 #include "client_help.h"
 
-int send_stdin_recv_sums(long wait_ms, int client_fd, char* recv_buf, ssize_t* total_recvd) {
+ClientArguments args;
+
+long long total_sleep_ns = 0LL;
+
+int send_stdin_recv_sums(int client_fd, char* recv_buf, ssize_t* total_recvd) {
     bool ok = true;
     *total_recvd = 0;
-    srand(time(NULL));
+    srand(time(NULL) ^ getpid());
 
     char* read_buf = malloc(MAX_BATCH_SIZE * sizeof(*read_buf));
     if (read_buf == NULL) {
@@ -53,13 +57,17 @@ int send_stdin_recv_sums(long wait_ms, int client_fd, char* recv_buf, ssize_t* t
             *total_recvd += recvd;
         }
 
-        //printf("%d SLEEPS AT %ld\n", getpid(), time(NULL));
-        if (msleep(wait_ms) < 0) {
+        //printf("%d SLEEPS AT %ld\n", getpid(), clock());
+        struct timespec sleep_start, sleep_end;
+        clock_gettime(CLOCK_REALTIME, &sleep_start);
+        if (msleep(args.wait_time) < 0) {
             fprintf(stderr, "Couldn't sleep after input");
             ok = false;
             break;
         }
-        //printf("%d WAKES AT %ld\n", getpid(), time(NULL));
+        clock_gettime(CLOCK_REALTIME, &sleep_end);
+        total_sleep_ns += 1000000000LL * (sleep_end.tv_sec - sleep_start.tv_sec) + (sleep_end.tv_nsec - sleep_start.tv_nsec);
+        //printf("%d WAKES AT %ld; SLEPT FOR %ld TICKS; EXPECTED %ld MS\n", getpid(), time(NULL), sleep_end - sleep_start, args.wait_time);
     }
 
     free(read_buf);
@@ -68,19 +76,19 @@ int send_stdin_recv_sums(long wait_ms, int client_fd, char* recv_buf, ssize_t* t
 
 int main(int argc, char* argv[]) {
     bool ok = true;
-    char* full_server_path = NULL;
     char* full_client_addr = NULL;
 
     char* recv_buf = NULL;
-    if ((recv_buf = malloc(RECV_BUF_SIZE)) == NULL) {
-        perror("Couldn't allocate memory for result");
-        ok = false;
+    if (ok) {
+        if ((recv_buf = malloc(RECV_BUF_SIZE)) == NULL) {
+            perror("Couldn't allocate memory for result");
+            ok = false;
+        }
     }
 
     int client_fd;
-    long wait_ms;
     if (ok) {
-        client_fd = get_connected_client_sock(argc, argv, &full_server_path, &full_client_addr, &wait_ms);
+        client_fd = get_connected_client_sock(argc, argv, &args, &full_client_addr);
         if (client_fd < 0) {
             ok = false;
         }
@@ -89,7 +97,7 @@ int main(int argc, char* argv[]) {
 
     ssize_t total_recvd;
     if (ok) {
-        if (send_stdin_recv_sums(wait_ms, client_fd, recv_buf, &total_recvd) < 0) {
+        if (send_stdin_recv_sums(client_fd, recv_buf, &total_recvd) < 0) {
             fprintf(stderr, "Error while communicating with server\n");
             ok = false;
         }
@@ -117,10 +125,16 @@ int main(int argc, char* argv[]) {
         //printf("%s", recv_buf);
     }
 
+    if (ok) {
+        if (log_total_sleep(args.log_file, total_sleep_ns) < 0) {
+            fprintf(stderr, "Error writing total sleep to log\n");
+            ok = false;
+        }
+    }
+
     if (close_temp_socket(full_client_addr) < 0) {
         fprintf(stderr, "Can't close client socket\n");
     }
-    free((char*)full_server_path);
     free(recv_buf);
     return ok ? 0 : -1;
 }

@@ -10,4 +10,6 @@ int close_temp_socket(const char* full_socket_path);
 
 struct sockaddr_un make_sockaddr(const char* full_path);
 int bind_assuring_dirs(int fd, struct sockaddr_un* addr, const char* full_path);
+int mkdirs(const char* path);
+
 #endif //BROWN_BOT_SOCKET_HELP_H

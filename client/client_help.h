@@ -13,10 +13,14 @@ extern const int MAX_BATCH_SIZE;
 extern const int RECV_BUF_SIZE;
 extern const int RES_QUEUE_SIZE;
 
+typedef struct ClientArguments {
+    long wait_time;
+    FILE* log_file;
+} ClientArguments;
 
-long get_wait_time(int argc, char* argv[]);
+int get_client_args(int argc, char* argv[], ClientArguments* arguments);
 int rand_range(int min, int max);
 int msleep(long ms);
-int get_connected_client_sock(int argc, char* argv[], char** server_full_path, char** client_full_path, long* wait_ms);
+int get_connected_client_sock(int argc, char* argv[], ClientArguments* arguments, char** client_full_path);
 
 #endif //BROWN_BOT_CLIENT_HELP_H

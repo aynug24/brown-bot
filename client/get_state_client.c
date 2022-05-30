@@ -20,10 +20,10 @@ int main(int argc, char* argv[]) {
         ok = false;
     }
 
-    long _wait_time;
     int client_fd;
+    ClientArguments _args;
     if (ok) {
-        client_fd = get_connected_client_sock(argc, argv, &full_server_path, &full_client_addr, &_wait_time);
+        client_fd = get_connected_client_sock(argc, argv, &_args, &full_client_addr);
         if (client_fd < 0) {
             ok = false;
         }

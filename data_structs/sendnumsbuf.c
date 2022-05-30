@@ -19,6 +19,7 @@ int make_sendbuf(size_t size, int max_sent_num_len, SendNumsBuf* dst) {
 
     dst->queue = queue;
     dst->unsent_num = last_num;
+    dst->unsent_ll = 0LL;
     dst->unsent_bytes = 0;
     dst->unsent_pos = 0;
     return 0;
@@ -27,7 +28,7 @@ int make_sendbuf(size_t size, int max_sent_num_len, SendNumsBuf* dst) {
 /*
  * -1 if err, 0 if client closed, 1 if can't send yet, 2 if sent everything
  */
-int send_nums(int client_fd, SendNumsBuf* buf) {
+int send_nums(int client_fd, SendNumsBuf* buf, FILE* log_file) {
     while (!buf->queue.is_empty || buf->unsent_bytes > 0) {
         while (buf->unsent_bytes > 0) {
             ssize_t sent = send(client_fd, buf->unsent_num + buf->unsent_pos, buf->unsent_bytes, MSG_DONTWAIT | MSG_NOSIGNAL); // ?
@@ -48,6 +49,11 @@ int send_nums(int client_fd, SendNumsBuf* buf) {
             buf->unsent_pos += sent;
         }
 
+        if (log_sending_answer(log_file, buf->unsent_ll) < 0) {
+            fprintf(stderr, "Error writing asnwer to log\n");
+            return -1;
+        }
+
         long long next_num;
         if (try_dequeue(&buf->queue, &next_num)) {
             int num_len = sprintf(buf->unsent_num, "%lld", next_num);
@@ -58,6 +64,7 @@ int send_nums(int client_fd, SendNumsBuf* buf) {
             buf->unsent_num[num_len] = '\n';
             buf->unsent_num[num_len + 1] = '\0';
 
+            buf->unsent_ll = next_num;
             buf->unsent_bytes = num_len + 1;
             buf->unsent_pos = 0;
         }

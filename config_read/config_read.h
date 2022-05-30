@@ -9,7 +9,7 @@ char* get_param(const char* param_name);
 char* get_server_full_path();
 
 extern const char* CONFIG_NAME;
-extern const char* SOCKETS_DIR;
+extern const char* BOT_DIR;
 extern const char* CONFIG_SERVER_PATH_PARAM;
 extern const int CONFIG_LINE_MAXLEN;
 extern const int SERVER_BACKLOG;

@@ -13,7 +13,7 @@
 #include "config_read.h"
 
 const char* CONFIG_NAME = "config";
-const char* SOCKETS_DIR = "/tmp/brown-bot/";
+const char* BOT_DIR = "/tmp/brown-bot/";
 const char* CONFIG_SERVER_PATH_PARAM = "server_path";
 const int CONFIG_LINE_MAXLEN = 255;
 const int SERVER_BACKLOG = 10;
@@ -91,11 +91,11 @@ char* get_server_full_path() {
 
     char* server_path = NULL;
     if (no_err) {
-        server_path = malloc(strlen(SOCKETS_DIR) + strlen(server_path_relative) + 1);
+        server_path = malloc(strlen(BOT_DIR) + strlen(server_path_relative) + 1);
         if (server_path == NULL) {
             perror("Couldn't allocate server path");
             no_err = false;
-        } else if (sprintf(server_path, "%s%s", SOCKETS_DIR, server_path_relative) < 0) {
+        } else if (sprintf(server_path, "%s%s", BOT_DIR, server_path_relative) < 0) {
             perror("Couldn't concat server path");
             no_err = false;
         }

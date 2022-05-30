@@ -1,0 +1,1 @@
+> /tmp/brown-bot/logs/server.logs
