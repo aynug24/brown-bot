@@ -2,8 +2,10 @@
 
 trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 
-cmake .
-cmake --build .
+# cmake .
+# cmake --build .
+
+make all
 
 rm -f result.txt
 exec > >(tee -ia result.txt)  # tee all output to result.txt

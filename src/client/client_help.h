@@ -1,6 +1,8 @@
 #ifndef BROWN_BOT_CLIENT_HELP_H
 #define BROWN_BOT_CLIENT_HELP_H
 
+#include <bits/types/FILE.h>
+
 extern const int CLIENT_PATH_MAXLEN; // todo разнести константы туда где должны быть (или избавиться)
 extern const int CLIENT_WAIT_TIME_MAXLEN;
 extern const int DEFAULT_WAIT_TIME_MS;

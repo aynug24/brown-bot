@@ -1,6 +1,9 @@
 #ifndef BROWN_BOT_LOGS_H
 #define BROWN_BOT_LOGS_H
 
+#include <bits/types/FILE.h>
+#include <stdio.h>
+
 const char* INC_STRING;
 const char* SND_ANSWR;
 const char* RCV_ANSWR;
