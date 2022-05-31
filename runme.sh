@@ -4,6 +4,7 @@ trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 rm -f result.txt
 exec > >(tee -ia result.txt)  # tee all output to result.txt
 
+
 echo "Welcome!"
 echo "This is a socket client-server application."
 echo "Server receives lines of numbers from clients and stores sum of all received numbers."
