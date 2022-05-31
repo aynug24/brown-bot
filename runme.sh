@@ -1,5 +1,8 @@
 #!/bin/bash
+
 trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
+
+make --silent
 
 rm -f result.txt
 exec > >(tee -ia result.txt)  # tee all output to result.txt

@@ -8,7 +8,7 @@
 #include <poll.h>
 #include <ctype.h>
 #include "../config_read/config_read.h" // its bad...
-#include "../socket_help.h"
+#include "../socket_help/socket_help.h"
 #include "../data_structs/readnumsbuf.h"
 #include "../data_structs/sendnumsbuf.h"
 #include "../logs/logs.h"

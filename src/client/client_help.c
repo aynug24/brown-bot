@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "../config_read/config_read.h"
-#include "../socket_help.h"
+#include "../socket_help/socket_help.h"
 #include "../data_structs/readnumsbuf.h"
 #include <stdio.h>
 #include <unistd.h>

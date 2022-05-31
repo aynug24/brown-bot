@@ -6,7 +6,7 @@
 #include <unistd.h>
 #include "logs.h"
 #include "../config_read/config_read.h" // terrible but ok
-#include "../socket_help.h"
+#include "../socket_help/socket_help.h"
 
 // idk how logs are usually implemented)
 // for the taks's purposes this will suffice

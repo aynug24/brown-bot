@@ -10,7 +10,7 @@
 #include <sys/stat.h>
 
 #include "socket_help.h"
-#include "config_read/config_read.h"
+#include "../config_read/config_read.h"
 
 const char* TMP_DIR_TEMPLATE = "client_XXXXXX";
 const char* TMP_SOCKET_NAME = "brown-bot-client.so";
