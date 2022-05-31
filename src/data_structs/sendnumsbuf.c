@@ -1,8 +1,9 @@
-//
-// Created by sergei on 29.05.22.
-//
-
+#include <stdio.h>
+#include <malloc.h>
+#include <sys/socket.h>
+#include <errno.h>
 #include "sendnumsbuf.h"
+#include "../logs/logs.h"
 
 int make_sendbuf(size_t size, int max_sent_num_len, SendNumsBuf* dst) {
     Queue queue;

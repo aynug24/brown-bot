@@ -1,7 +1,4 @@
-//
-// Created by sergei on 29.05.22.
-//
-
+#include <malloc.h>
 #include "queue.h"
 
 int make_queue(size_t capacity, Queue* dst) {

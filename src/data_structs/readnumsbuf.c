@@ -1,8 +1,10 @@
-//
-// Created by sergei on 29.05.22.
-//
-
+#include <malloc.h>
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <sys/socket.h>
 #include "readnumsbuf.h"
+#include "../logs/logs.h"
 
 int make_readbuf(size_t size, ReadNumsBuf* dst) {
     char* buf = malloc(size * sizeof(char));

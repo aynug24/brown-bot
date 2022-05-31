@@ -1,27 +1,17 @@
-//
-// Created by sergei on 29.05.22.
-//
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include "../config_read/config_read.h"
-#include "../socket_help/socket_help.h"
-#include "../data_structs/readnumsbuf.h"
+#include <getopt.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <memory.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/un.h>
 #include <ctype.h>
-#include <limits.h>
+#include <string.h>
+#include <stdlib.h>
+#include <errno.h>
 #include <time.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 #include "client_help.h"
 #include "../logs/logs.h"
+#include "../config_read/config_read.h"
+#include "../socket_help/socket_help.h"
 
 const int CLIENT_PATH_MAXLEN = 1024; // todo разнести константы туда где должны быть (или избавиться)
 const int CLIENT_WAIT_TIME_MAXLEN = 10;

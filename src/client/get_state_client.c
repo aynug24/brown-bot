@@ -1,11 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include <stdbool.h>
-#include "../socket_help/socket_help.h"
-#include "../data_structs/readnumsbuf.h"
-
-#include <memory.h>
+#include <stddef.h>
+#include <malloc.h>
 #include <sys/socket.h>
+#include <stdlib.h>
+#include "../socket_help/socket_help.h"
 #include "client_help.h"
 
 

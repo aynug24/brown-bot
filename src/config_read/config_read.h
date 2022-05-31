@@ -1,7 +1,3 @@
-//
-// Created by sergei on 28.05.22.
-//
-
 #ifndef BROWN_BOT_CONFIG_READ_H
 #define BROWN_BOT_CONFIG_READ_H
 

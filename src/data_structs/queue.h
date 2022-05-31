@@ -1,24 +1,10 @@
-//
-// Created by sergei on 29.05.22.
-//
-
-#include <stdio.h>
-#include <unistd.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <memory.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/un.h>
-#include <poll.h>
-#include <fcntl.h>
-#include <assert.h>
-#include "../config_read/config_read.h" // its bad...
-#include "../socket_help/socket_help.h"
 
 #ifndef BROWN_BOT_QUEUE_H
 #define BROWN_BOT_QUEUE_H
+
+#include <stddef.h>
+#include <sys/types.h>
+#include <stdbool.h>
 
 typedef struct Queue {
     long long* nums;

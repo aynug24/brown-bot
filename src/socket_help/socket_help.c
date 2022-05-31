@@ -3,9 +3,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <memory.h>
 #include <sys/socket.h>
-#include <sys/types.h>
 #include <sys/un.h>
 #include <sys/stat.h>
 

@@ -1,12 +1,11 @@
-#include <stdio.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <memory.h>
+#include <ctype.h>
+#include <malloc.h>
+#include <bits/getopt_core.h>
+#include <string.h>
 #include <sys/socket.h>
 #include <sys/un.h>
+#include <unistd.h>
 #include <poll.h>
-#include <ctype.h>
 #include "../config_read/config_read.h" // its bad...
 #include "../socket_help/socket_help.h"
 #include "../data_structs/readnumsbuf.h"

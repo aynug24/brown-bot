@@ -1,7 +1,3 @@
-//
-// Created by sergei on 29.05.22.
-//
-
 #ifndef BROWN_BOT_CLIENT_HELP_H
 #define BROWN_BOT_CLIENT_HELP_H
 

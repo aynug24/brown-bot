@@ -1,15 +1,8 @@
-//
-// Created by sergei on 28.05.22.
-//
+#include <bits/types/FILE.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <errno.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include <memory.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/un.h>
+#include <string.h>
 #include "config_read.h"
 
 const char* CONFIG_NAME = "config";

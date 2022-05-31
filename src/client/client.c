@@ -1,18 +1,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
-#include "../config_read/config_read.h"
-#include "../socket_help/socket_help.h"
-#include "../data_structs/readnumsbuf.h"
-#include <stdio.h>
 #include <unistd.h>
 #include <errno.h>
-#include <stdlib.h>
-#include <stdbool.h>
 #include <memory.h>
 #include <sys/socket.h>
 #include <time.h>
+#include "../socket_help/socket_help.h"
 #include "client_help.h"
+#include "../logs/logs.h"
 
 ClientArguments args;
 

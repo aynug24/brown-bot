@@ -1,27 +1,8 @@
-//
-// Created by sergei on 29.05.22.
-//
-
-#include <stdio.h>
-#include <unistd.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdbool.h>
-#include <memory.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/un.h>
-#include <poll.h>
-#include <fcntl.h>
-#include <assert.h>
-#include "../config_read/config_read.h" // its bad...
-#include "../socket_help/socket_help.h"
-#include "queue.h"
-#include "../logs/logs.h"
-
 #ifndef BROWN_BOT_READNUMSBUF_H
 #define BROWN_BOT_READNUMSBUF_H
 
+#include <bits/types/FILE.h>
+#include "queue.h"
 
 typedef struct ReadNumsBuf {
     char* buf;
