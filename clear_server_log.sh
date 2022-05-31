@@ -1,1 +1,1 @@
-truncate -c -s 0 /tmp/brown-bot/logs/server.log 2>/dev/null
+truncate -c -s 0 /tmp/brown-bot/logs/server.log

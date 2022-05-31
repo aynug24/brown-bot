@@ -30,28 +30,31 @@ int make_sendbuf(size_t size, int max_sent_num_len, SendNumsBuf* dst) {
  */
 int send_nums(int client_fd, SendNumsBuf* buf, FILE* log_file) {
     while (!buf->queue.is_empty || buf->unsent_bytes > 0) {
-        while (buf->unsent_bytes > 0) {
-            ssize_t sent = send(client_fd, buf->unsent_num + buf->unsent_pos, buf->unsent_bytes, MSG_DONTWAIT | MSG_NOSIGNAL); // ?
-            if (sent < 0 && errno == EPIPE) {
-                return 0;
+        if (buf->unsent_bytes > 0) {
+            while (buf->unsent_bytes > 0) {
+                ssize_t sent = send(client_fd, buf->unsent_num + buf->unsent_pos, buf->unsent_bytes,
+                                    MSG_DONTWAIT | MSG_NOSIGNAL); // ?
+                if (sent < 0 && errno == EPIPE) {
+                    return 0;
+                }
+                if (sent < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
+                    perror("Error sending number");
+                    return -1;
+                }
+                if (sent < 0) {
+                    return 1;
+                }
+                if (sent == 0) {
+                    return 0; // can this be?
+                }
+                buf->unsent_bytes -= sent;
+                buf->unsent_pos += sent;
             }
-            if (sent < 0 && !(errno == EAGAIN || errno == EWOULDBLOCK)) {
-                perror("Error sending number");
+
+            if (log_sending_answer(log_file, buf->unsent_ll) < 0) {
+                fprintf(stderr, "Error writing asnwer to log\n");
                 return -1;
             }
-            if (sent < 0) {
-                return 1;
-            }
-            if (sent == 0) {
-                return 0; // can this be?
-            }
-            buf->unsent_bytes -= sent;
-            buf->unsent_pos += sent;
-        }
-
-        if (log_sending_answer(log_file, buf->unsent_ll) < 0) {
-            fprintf(stderr, "Error writing asnwer to log\n");
-            return -1;
         }
 
         long long next_num;

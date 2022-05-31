@@ -3,13 +3,13 @@
 FIRST_COL=15
 DATA_COL=16
 
-CLIENT_MIN=4
-CLIENT_MAX=100
-CLIENT_DELTA=24
+CLIENT_MIN=$1
+CLIENT_MAX=$2
+CLIENT_DELTA=$3
 
-SLEEP_MIN=0
-SLEEP_MAX=1000
-SLEEP_DELTA=200
+SLEEP_MIN=$4
+SLEEP_MAX=$5
+SLEEP_DELTA=$6
 
 
 ./clear_server_log.sh
@@ -19,7 +19,7 @@ SLEEP_DELTA=200
 printf "%${FIRST_COL}s" "Clients\Sleep"
 for ((sleep_ms = SLEEP_MIN; sleep_ms <= SLEEP_MAX; sleep_ms += SLEEP_DELTA))
 do
-  printf "%${DATA_COL}s" "$( bc <<< "scale=1;${sleep_ms}/1000" )s"
+  printf "%${DATA_COL}s" "${sleep_ms}ms"
 done
 echo
 
@@ -53,8 +53,6 @@ do
 
           ./clear_server_log.sh
           ./remove_client_logs.sh -n "${client_count}"
-
-          sleep 10
     done
 
     echo

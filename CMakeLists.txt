@@ -12,7 +12,7 @@ add_executable(bb_zerosum client/get_state_client.c config_read/config_read.c co
 file(
         COPY
         config test_zerosum.txt runme.sh test_n_clients.sh clear_server_log.sh
-        remove_client_logs.sh test_performance.sh
+        remove_client_logs.sh test_performance.sh test_memory.sh
         DESTINATION
         ${CMAKE_CURRENT_BINARY_DIR}
         FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_WRITE GROUP_READ GROUP_EXECUTE WORLD_READ)
