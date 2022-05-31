@@ -1,3 +1,4 @@
+#!/bin/bash
 REPEATS=500
 CLIENTS=100
 

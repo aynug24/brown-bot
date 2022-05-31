@@ -1,3 +1,5 @@
+#!/bin/bash
+
 while getopts "w:n:" opt;
 do
   case $opt in

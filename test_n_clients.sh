@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # getting w - client wait time ms, and n - number of clients
 while getopts "w:n:" opt;
 do
