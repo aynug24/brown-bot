@@ -1,35 +1,29 @@
+OPTIMIZATION := O3
+
+COMMON_SOURCES := src/config_read/config_read.c \
+	src/data_structs/readnumsbuf.c \
+	src/data_structs/sendnumsbuf.c \
+	src/data_structs/queue.c \
+	src/logs/logs.c \
+	src/socket_help/socket_help.c
+
+COMMON_CLIENT_SOURCES := src/client/client_help.c
+
 all: bb_server bb_client bb_zerosum config scripts test_files
 
 bb_server: config
-	gcc src/data_structs/queue.c src/data_structs/queue.h \
-		src/server/server.c \
-		src/config_read/config_read.c src/config_read/config_read.h \
-		src/socket_help/socket_help.c src/socket_help/socket_help.h \
-		src/logs/logs.c src/logs/logs.h \
-		src/data_structs/readnumsbuf.c src/data_structs/readnumsbuf.h \
-		src/data_structs/sendnumsbuf.c src/data_structs/sendnumsbuf.h \
+	gcc	-$(OPTIMIZATION) src/server/server.c \
+		$(COMMON_SOURCES) \
 		-o bb_server
 
 bb_client: config
-	gcc src/client/client.c \
-		src/config_read/config_read.c src/config_read/config_read.h \
-		src/socket_help/socket_help.c src/socket_help/socket_help.h \
-		src/logs/logs.c src/logs/logs.h \
-		src/data_structs/readnumsbuf.c src/data_structs/readnumsbuf.h \
-		src/client/client_help.c src/client/client_help.h \
-		src/data_structs/queue.h src/data_structs/queue.c \
-		src/data_structs/sendnumsbuf.c src/data_structs/sendnumsbuf.h \
+	gcc -$(OPTIMIZATION) src/client/client.c \
+		$(COMMON_SOURCES) $(COMMON_CLIENT_SOURCES) \
 		-o bb_client
 
 bb_zerosum: config
-	gcc src/client/get_state_client.c \
-		src/config_read/config_read.c src/config_read/config_read.h \
-		src/socket_help/socket_help.c src/socket_help/socket_help.h \
-		src/logs/logs.c src/logs/logs.h \
-		src/data_structs/readnumsbuf.c src/data_structs/readnumsbuf.h \
-		src/client/client_help.c src/client/client_help.h \
-		src/data_structs/sendnumsbuf.c src/data_structs/sendnumsbuf.h \
-		src/data_structs/queue.h src/data_structs/queue.c \
+	gcc -$(OPTIMIZATION) src/client/get_state_client.c \
+		$(COMMON_SOURCES) $(COMMON_CLIENT_SOURCES) \
 		-o bb_zerosum
 
 config:
@@ -46,4 +40,4 @@ test_files:
 clear:
 	ls | grep -v runme.sh | grep .sh | xargs rm -f
 	rm -f bb_*
-	rm -f result.txt config
+	rm -f result.txt config test_zerosum.txt

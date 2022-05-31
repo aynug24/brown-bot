@@ -5,6 +5,7 @@ trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 # cmake .
 # cmake --build .
 
+make clear
 make all
 
 rm -f result.txt
