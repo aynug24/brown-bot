@@ -25,5 +25,6 @@ done
 first_mem_line=$(cat /tmp/brown-bot/logs/server.log | awk '$2 == "INC_CONN" {print $0}' | head -1 | tr -d '\0')
 second_mem_line=$(tac /tmp/brown-bot/logs/server.log | awk '$2 == "INC_CONN" {print $0}' | head -1 | tr -d '\0')
 
+printf "%13s %8s %2s %13s\n" "TIMESTAMP" "LOG_TYPE" "FD" "HEAP ADDRESS"
 echo "$first_mem_line"
 echo "$second_mem_line"

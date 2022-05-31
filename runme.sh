@@ -5,8 +5,9 @@ trap 'trap - SIGTERM && kill -- -$$' SIGINT SIGTERM EXIT
 # cmake .
 # cmake --build .
 
-make clear
-make all
+echo "Building..."
+make clear --silent
+make all --silent
 
 rm -f result.txt
 exec > >(tee -ia result.txt)  # tee all output to result.txt
